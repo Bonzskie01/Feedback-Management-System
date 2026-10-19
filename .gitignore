@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+*.log
+node_modules/
+database/*.backup
+database/*.dump
+database/*.sql
+!database/security_migration.sql
+!database/feedback_schema.sql

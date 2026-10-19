@@ -1,0 +1,511 @@
+/* Global responsive safety layer for the voting system. */
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+/* Sidebar/menu theme normalization across all admin pages. */
+:root {
+    --menu-bg: rgba(255, 255, 255, 0.96);
+    --menu-text: #334155;
+    --menu-heading: #0f172a;
+    --menu-muted: #64748b;
+    --menu-border: rgba(15, 23, 42, 0.10);
+    --menu-hover-bg: rgba(59, 130, 246, 0.10);
+    --menu-active-bg: rgba(59, 130, 246, 0.14);
+    --menu-active-text: #1d4ed8;
+    --menu-danger-text: #dc2626;
+}
+
+[data-theme="dark"] {
+    --menu-bg: #0f1e4a;
+    --menu-text: rgba(255, 255, 255, 0.72);
+    --menu-heading: #ffffff;
+    --menu-muted: rgba(255, 255, 255, 0.42);
+    --menu-border: rgba(255, 255, 255, 0.08);
+    --menu-hover-bg: rgba(255, 255, 255, 0.10);
+    --menu-active-bg: rgba(59, 130, 246, 0.25);
+    --menu-active-text: #90caf9;
+    --menu-danger-text: #f87171;
+}
+
+.sidebar {
+    background: var(--menu-bg) !important;
+    border-right: 1px solid var(--menu-border) !important;
+    color: var(--menu-text) !important;
+}
+
+.sidebar-header,
+.sidebar-footer {
+    border-color: var(--menu-border) !important;
+}
+
+.sidebar-header h2,
+.sidebar-header .logo-row,
+.sidebar-nav a:hover {
+    color: var(--menu-heading) !important;
+}
+
+.sidebar-header small,
+.sidebar-footer {
+    color: var(--menu-muted) !important;
+}
+
+.sidebar-nav a {
+    color: var(--menu-text) !important;
+}
+
+.sidebar-nav a:hover {
+    background: var(--menu-hover-bg) !important;
+}
+
+.sidebar-nav a.active {
+    background: var(--menu-active-bg) !important;
+    color: var(--menu-active-text) !important;
+    border-color: var(--menu-active-bg) !important;
+}
+
+.sidebar-nav a.logout-link {
+    color: var(--menu-danger-text) !important;
+}
+
+.nav-divider {
+    background: var(--menu-border) !important;
+}
+
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+input,
+select,
+textarea,
+button {
+    max-width: 100%;
+}
+
+table {
+    max-width: 100%;
+}
+
+.data-table-panel,
+.table-panel,
+.table-wrapper,
+.bulk-table-wrapper,
+.results-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table,
+.bulk-table,
+.results-table,
+.positions-table,
+.candidates-table,
+.elections-table,
+.party-table,
+.voters-table {
+    min-width: 760px;
+}
+
+.admin-wrapper,
+.admin-container,
+.main-content,
+.content,
+.content-area,
+.container,
+.login-container,
+.card,
+.card-panel,
+.toolbar,
+.form-card,
+.credentials-card {
+    max-width: 100%;
+}
+
+.toolbar-row,
+.top-bar,
+.btn-group,
+.action-buttons,
+.card-panel-header,
+.page-actions,
+.filter-row,
+.form-actions {
+    flex-wrap: wrap;
+}
+
+.btn,
+button,
+.action-btn {
+    white-space: normal;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-grid,
+    .results-grid,
+    .generate-grid,
+    .settings-grid,
+    .profile-grid,
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .stats-grid,
+    .stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: min(82vw, 280px) !important;
+        max-width: 320px !important;
+        transform: translateX(-105%);
+        transition: transform 0.25s ease;
+        z-index: 1000 !important;
+        overflow-y: auto;
+    }
+
+    .sidebar.open {
+        transform: translateX(0) !important;
+        box-shadow: 12px 0 30px rgba(15, 23, 42, 0.28);
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        z-index: 999;
+    }
+
+    .main-content,
+    .content-wrapper {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+
+    .content,
+    .content-area {
+        padding: 16px !important;
+    }
+
+    .topbar,
+    .top-bar {
+        gap: 10px;
+        padding: 12px 16px !important;
+        align-items: center !important;
+    }
+
+    .topbar {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .topbar > div:first-child {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        min-width: 0;
+    }
+
+    .topbar h1,
+    .top-bar h1,
+    .page-hdr h2,
+    .page-header h2 {
+        font-size: 18px !important;
+        line-height: 1.25;
+    }
+
+    .topbar-user,
+    .admin-info {
+        font-size: 12px !important;
+    }
+
+    .topbar-right {
+        flex: 1 1 auto;
+        width: auto !important;
+        min-width: 0;
+        justify-content: flex-end !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+
+    .topbar-user {
+        min-width: 0;
+    }
+
+    .topbar-user .avatar {
+        flex: 0 0 auto;
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .topbar-user span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .topbar-btn {
+        flex: 0 0 auto;
+        width: 38px !important;
+        height: 38px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .voter-topbar {
+        align-items: center !important;
+        border-radius: 12px !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+        padding: 12px 14px !important;
+    }
+
+    .voter-info {
+        flex: 1 1 auto;
+        gap: 8px !important;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .voter-info span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .voter-topbar > div:last-child {
+        flex: 0 0 auto;
+        gap: 8px !important;
+    }
+
+    .voter-topbar .theme-btn,
+    .voter-topbar .logout-link {
+        min-height: 38px;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .toolbar,
+    .card-panel,
+    .data-table-panel,
+    .credentials-card,
+    .container {
+        border-radius: 10px !important;
+    }
+
+    .toolbar-row,
+    .card-panel-header,
+    .form-actions,
+    .page-actions,
+    .filter-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .toolbar-row > *,
+    .card-panel-header > *,
+    .form-actions > *,
+    .page-actions > *,
+    .filter-row > *,
+    .search-input-wrapper,
+    .search-input-wrapper input,
+    .filter-select {
+        width: 100% !important;
+    }
+
+    .btn-group {
+        display: flex !important;
+        width: 100%;
+        gap: 8px !important;
+    }
+
+    .btn-group .btn,
+    .btn-group button,
+    .toolbar .btn,
+    .toolbar button,
+    .action-buttons .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .stats-grid,
+    .stats-row,
+    .results-stats,
+    .cards-grid,
+    .party-list-grid,
+    .candidates-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    .stat-card {
+        min-width: 0;
+        padding: 14px !important;
+    }
+
+    .stat-number,
+    .stat-value {
+        font-size: 22px !important;
+        line-height: 1.1;
+    }
+
+    .form-row,
+    .form-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .login-container {
+        padding: 16px !important;
+    }
+
+    .login-box {
+        padding: 24px 18px !important;
+    }
+
+    .welcome-banner,
+    .hero,
+    .ballot-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 14px !important;
+        padding: 18px !important;
+    }
+
+    .data-table thead th,
+    .data-table tbody td,
+    .bulk-table th,
+    .bulk-table td {
+        padding: 10px 12px !important;
+        font-size: 12px !important;
+    }
+
+    .table-footer {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+}
+
+@media (max-width: 520px) {
+    .content,
+    .content-area {
+        padding: 12px !important;
+    }
+
+    .stats-grid,
+    .stats-row,
+    .results-stats,
+    .cards-grid,
+    .party-list-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .candidates-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .btn-group,
+    .action-buttons {
+        flex-direction: column !important;
+    }
+
+    .top-bar {
+        flex-direction: column !important;
+    }
+
+    .admin-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .topbar {
+        padding: 10px 12px !important;
+    }
+
+    .topbar h1 {
+        font-size: 16px !important;
+        white-space: nowrap;
+    }
+
+    .topbar-user span {
+        display: none;
+    }
+
+    .voter-topbar {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .voter-info {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .voter-topbar > div:last-child {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .voter-topbar .theme-btn,
+    .voter-topbar .logout-link {
+        width: 100%;
+    }
+
+    .container {
+        padding: 18px !important;
+    }
+
+    .card-panel-body,
+    .credentials-body {
+        padding: 16px !important;
+    }
+
+    .candidate-card {
+        padding: 12px 10px !important;
+    }
+
+    .candidate-name,
+    .candidate-party {
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 380px) {
+    .candidates-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .page-link,
+    .pagination .page-link {
+        min-width: 32px !important;
+        height: 32px !important;
+        padding: 0 8px !important;
+        font-size: 12px !important;
+    }
+}

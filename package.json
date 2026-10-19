@@ -1,0 +1,8 @@
+{
+  "name": "feedback-management-system",
+  "version": "1.0.0",
+  "description": "Feedback Management System",
+  "dependencies": {
+    "docx": "^9.0.0"
+  }
+}

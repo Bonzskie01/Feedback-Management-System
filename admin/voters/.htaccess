@@ -1,0 +1,5 @@
+Options -Indexes
+
+<Files "upload_template.php">
+    LimitRequestBody 6291456
+</Files>

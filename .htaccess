@@ -1,0 +1,43 @@
+# .htaccess
+
+
+# Defense in depth: accept requests only from localhost and private LAN ranges.
+<RequireAny>
+    Require ip 127.0.0.1
+    Require ip ::1
+    Require ip 10.0.0.0/8
+    Require ip 172.16.0.0/12
+    Require ip 192.168.0.0/16
+    Require ip 169.254.0.0/16
+</RequireAny>
+
+# Prevent directory listing
+Options -Indexes
+
+# Block direct web access to internal application and repository directories.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:\.git|config|includes)(?:/|$) - [F,L,NC]
+</IfModule>
+
+# Protect application secrets, database dumps, backups, logs, and dependency metadata
+<FilesMatch "(^\.env|\.env\..*|.*\.(sql|bak|backup|old|orig|log|ini|json|lock|md|txt|conf|yml|yaml)$)">
+    Require all denied
+</FilesMatch>
+
+# Protect config files
+<FilesMatch "^(database\.php|dbconn\.php|.*\.ini)$">
+    Require all denied
+</FilesMatch>
+
+# Basic browser hardening for LAN deployment
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "same-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# Error pages
+ErrorDocument 404 /voting-system/404.php
+ErrorDocument 403 /voting-system/403.php

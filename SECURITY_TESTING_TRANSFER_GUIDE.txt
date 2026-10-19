@@ -1,0 +1,166 @@
+VOTING SYSTEM - SECURE TRANSFER AND HACKING TEST GUIDE
+=====================================================
+
+IMPORTANT SAFETY RULES
+----------------------
+1. Use test data only. Do not use real student, voter, or administrator data.
+2. Do not use the server computer as the attacker computer.
+3. Keep the election test LAN disconnected from the internet.
+4. Do not install unknown hacking tools directly on your personal Windows installation.
+5. Perform attacks only against the voting system and devices you own or are authorized to test.
+
+COMPUTERS AND NETWORK
+---------------------
+- Server computer: runs XAMPP, PostgreSQL, and the Voting System.
+- Attacker laptop: runs a disposable virtual machine such as Kali Linux.
+- Election router: dedicated and isolated; no internet connection.
+- Voting clients: connect only to the election router.
+
+ATTACKER LAPTOP PROTECTION
+--------------------------
+1. Update Windows, Microsoft Defender, and the virtualization software first.
+2. Create a new disposable virtual machine for the test.
+3. Take a clean VM snapshot before installing or running testing tools.
+4. Disable VM shared folders, shared clipboard, drag-and-drop, USB passthrough, and saved credentials.
+5. Do not sign in to personal email, banking, social media, or cloud storage during the test.
+6. Keep personal files off the attacker laptop or store them in an encrypted offline backup.
+7. Never disable Microsoft Defender on the Windows host. Exceptions should not cover the whole disk.
+8. Do not run unknown scripts, cracked tools, payloads, or executables on the Windows host.
+9. After testing, shut down and delete or revert the attacker VM to its clean snapshot.
+10. Run Microsoft Defender Offline Scan and a full scan after the test.
+
+SECURE SYSTEM TRANSFER
+----------------------
+1. Copy the project using a clean, scanned USB drive.
+2. Scan the USB drive and destination computer with Microsoft Defender before opening files.
+3. Do not transfer .git history, old backups, logs, temporary files, or real credentials unless required.
+4. Keep database backups and configuration files outside the Apache web directory.
+5. Restore the database from a verified offline backup.
+6. Create fresh database and admin passwords on the testing computer.
+7. Generate a fresh APP_KEY and other application secrets. Do not reuse production secrets.
+8. Confirm that PostgreSQL accepts connections from localhost only.
+9. Confirm that PHP display_errors is Off.
+10. Enable the bundled GD image extension in C:\xampp\php\php.ini:
+    extension=gd
+    Restart Apache, then verify with: C:\xampp\php\php.exe -m
+11. Confirm that Apache directory listing is disabled.
+
+SERVER NETWORK SETUP
+--------------------
+1. Connect the server to the isolated election router.
+2. Run: ipconfig
+3. Record the server IPv4 address, subnet mask, and gateway.
+4. Reserve a fixed server IP in the router or configure a static address.
+
+Example only:
+  Server IP: 192.168.10.20
+  Subnet mask: 255.255.255.0
+  Election subnet: 192.168.10.0/24
+  Voting System URL: http://192.168.10.20:8080/
+
+Do not copy the example subnet unless it matches the actual election router.
+
+WINDOWS NETWORK PROFILE
+-----------------------
+1. Open Settings > Network & Internet.
+2. Open the active Ethernet or Wi-Fi connection properties.
+3. Select Private network only when connected to the trusted election router.
+
+WINDOWS FIREWALL
+----------------
+1. Press Win+R, enter wf.msc, and press Enter.
+2. Open Inbound Rules.
+3. Find Apache HTTP Server rules for:
+   C:\xampp\apache\bin\httpd.exe
+4. Disable broad XAMPP rules that allow Any port, Any remote address, TCP, or UDP.
+5. Do not disable rules belonging to other Apache installations such as EDB/PEM.
+6. Create one Custom inbound rule with:
+   Program: C:\xampp\apache\bin\httpd.exe
+   Protocol: TCP
+   Local port: 8080
+   Remote address: actual election subnet only
+   Action: Allow
+   Profile: Private
+   Name: VMS Apache 8080 - Election LAN Only
+7. Do not create a UDP rule.
+8. Do not allow port 443 when HTTPS is not being used.
+9. Do not expose PostgreSQL port 5432 to the LAN.
+
+APACHE LAN ALLOWLIST
+--------------------
+Update the project .htaccess with the actual election subnet:
+
+<RequireAny>
+    Require ip 127.0.0.1
+    Require ip ::1
+    Require ip 192.168.10.0/24
+</RequireAny>
+
+Remove broad ranges when they are not the actual election subnet:
+  10.0.0.0/8
+  172.16.0.0/12
+  192.168.0.0/16
+  169.254.0.0/16
+
+Restart Apache after changing .htaccess.
+
+FILES THAT MUST NOT BE WEB-ACCESSIBLE
+-------------------------------------
+- Environment and configuration files
+- SQL files and database dumps
+- Backup, old, log, and temporary files
+- Git metadata
+- node_modules
+- Debug and test utilities
+- Password-reset scripts
+- Generated credential exports
+
+Disabled placeholder files should return HTTP 404. Sensitive active pages must require an
+authenticated administrator session, CSRF token, and admin password confirmation.
+
+PRE-TEST CHECKLIST
+------------------
+[ ] Clean offline database backup created and disconnected from the test network
+[ ] Test data only
+[ ] Fresh admin password and TOTP/2FA enabled
+[ ] Default accounts removed or disabled
+[ ] Apache configuration reports Syntax OK
+[ ] Main page responds on TCP port 8080
+[ ] PostgreSQL port 5432 is not reachable from another LAN device
+[ ] Windows Firewall allows TCP 8080 only from the election subnet
+[ ] Debug/test/reset endpoints return 404 or require authentication
+[ ] PHP errors are logged but not displayed to users
+[ ] Apache, PostgreSQL, and application audit logs are enabled
+[ ] Server clock is correct
+[ ] Attacker VM clean snapshot created
+[ ] Internet disconnected from the election LAN
+
+DURING TESTING
+--------------
+1. Keep one authorized person monitoring the server.
+2. Monitor Apache, PostgreSQL, Windows Defender, and application audit logs.
+3. Record the tester, source IP, test time, method, and result.
+4. Stop testing if real data appears, the server becomes unstable, or an unknown device joins.
+5. Do not delete logs until the findings have been reviewed and backed up.
+
+POST-TEST CHECKLIST
+-------------------
+1. Disconnect the attacker laptop from the election LAN.
+2. Export and preserve logs and test findings.
+3. Restore the database from the clean backup if test data was modified.
+4. Rotate admin, database, and application secrets.
+5. Revert or delete the attacker VM.
+6. Run Microsoft Defender Offline Scan and a full scan on both computers.
+7. Review startup applications, installed programs, browser extensions, services, and scheduled tasks.
+8. Apply fixes, repeat the security checks, and retest only the affected areas.
+9. For maximum assurance, reimage the attacker laptop before using it for personal accounts.
+
+EMERGENCY RESPONSE
+------------------
+If spyware, ransomware, an unknown administrator account, or unexpected outbound traffic is found:
+1. Disconnect the affected computer from Ethernet and Wi-Fi immediately.
+2. Do not reconnect it to the election LAN.
+3. Preserve logs and notes about what happened.
+4. Change credentials from a separate clean computer.
+5. Reimage the affected computer instead of trusting manual cleanup for a high-risk compromise.
+

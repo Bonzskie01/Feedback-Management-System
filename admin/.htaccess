@@ -1,0 +1,5 @@
+Options -Indexes
+
+<Files "settings.php">
+    LimitRequestBody 8388608
+</Files>

@@ -1,0 +1,629 @@
+VOTING SYSTEM - COMPLETE NEW COMPUTER SETUP FOR SECURITY TESTING
+================================================================
+
+Purpose
+-------
+This guide prepares a dedicated Windows computer as the Voting System test
+server. Do not use a personal laptop as the server or attacker computer.
+Use test data only and perform attacks only with written authorization.
+
+Current tested environment (reference only)
+-------------------------------------------
+- Windows 64-bit
+- Apache 2.4.58 on XAMPP, port 8080
+- PHP 8.0.30 with PostgreSQL, ZIP, Fileinfo, EXIF, MBString, OpenSSL, and GD
+- PostgreSQL 18.1
+- Node.js 24.12.0 and npm 11.7.0
+
+PHP 8.0 is old and must never be exposed to the internet. For a final
+deployment, use a currently supported PHP release after compatibility testing.
+The test network described below must remain isolated from the internet.
+
+TARGET LAYOUT
+-------------
+Use this layout on the new computer:
+
+  C:\VMS\Voting System FINAL\
+  C:\VMS\private-config\voting-system.env
+  C:\VMS\private-backups\Voting-System-FINAL-db-20260721.dump
+
+The application automatically looks for its environment file at:
+
+  C:\VMS\private-config\voting-system.env
+
+when the project is stored at C:\VMS\Voting System FINAL.
+
+NETWORK DESIGN
+--------------
+- Dedicated test server: Windows, XAMPP, PostgreSQL, Voting System
+- Dedicated attacker computer: disposable VM; no personal accounts or files
+- Optional monitoring computer: Wazuh or manual log monitoring
+- Dedicated election router: no internet connection
+- Authorized voting clients: test devices only
+- Dedicated admin computer: fixed IP address
+
+Never use the attacker computer as the server or monitoring computer.
+
+
+PHASE 1 - PREPARE THE DEDICATED TEST COMPUTER
+=============================================
+
+1. Back up anything needed from the computer, then perform a clean Windows
+   installation or trusted factory reset.
+
+2. Create a local Windows administrator account used only for setup. Create a
+   separate non-administrator account for routine operation when practical.
+
+3. Install all Windows security updates before disconnecting the internet.
+
+4. Enable Microsoft Defender:
+   - Real-time protection
+   - Cloud protection during setup only
+   - Tamper protection
+   - Potentially unwanted application blocking
+
+5. Run Microsoft Defender Full Scan.
+
+6. Remove unnecessary software, browser extensions, remote-access tools,
+   cracked applications, and vendor bloatware.
+
+7. Disable services not needed for the test:
+   - Remote Desktop, unless explicitly required and restricted
+   - Remote Assistance
+   - PowerShell remoting
+   - Unnecessary Windows file/printer sharing
+   - Unnecessary third-party remote-control applications
+
+8. Do not sign in to personal email, banking, social media, password managers,
+   or personal cloud storage on this computer.
+
+
+PHASE 2 - INSTALL REQUIRED SOFTWARE
+===================================
+
+Install software only from official vendor sources. Verify digital signatures
+and scan installers before running them.
+
+1. Install XAMPP/Apache and PHP.
+
+2. Install PostgreSQL. PostgreSQL 18 is used by the current test machine. Use
+   the same or a compatible supported version.
+
+3. Install Node.js. Node is required only for DOCX generation/export.
+
+4. Open C:\xampp\php\php.ini and enable these PHP extensions by removing the
+   leading semicolon where present:
+
+   extension=fileinfo
+   extension=mbstring
+   extension=exif
+   extension=pgsql
+   extension=pdo_pgsql
+   extension=gd
+
+   Also ensure OpenSSL and ZIP appear in the PHP module list.
+
+5. Use these PHP production-style settings:
+
+   display_errors=Off
+   log_errors=On
+   expose_php=Off
+   upload_max_filesize=16M
+   post_max_size=20M
+   max_file_uploads=3
+
+6. Restart Apache, then verify modules in an Administrator PowerShell:
+
+   C:\xampp\php\php.exe -m
+
+   Confirm the output contains:
+
+   gd
+   pgsql
+   pdo_pgsql
+   zip
+   openssl
+   mbstring
+   fileinfo
+   exif
+
+7. Record installed versions:
+
+   C:\xampp\php\php.exe -v
+   C:\xampp\apache\bin\httpd.exe -v
+   psql --version
+   node --version
+   npm --version
+
+
+PHASE 3 - TRANSFER THE APPLICATION SAFELY
+=========================================
+
+1. Use a clean USB drive dedicated to the test.
+
+2. Scan the USB drive on the source and destination computers.
+
+3. Create these directories on the new computer:
+
+   C:\VMS
+   C:\VMS\private-config
+   C:\VMS\private-backups
+
+4. Copy the project to:
+
+   C:\VMS\Voting System FINAL
+
+5. Copy the database dump to:
+
+   C:\VMS\private-backups\Voting-System-FINAL-db-20260721.dump
+
+6. Do not copy real credentials, real voter data, Apache logs, temporary files,
+   browser profiles, or personal documents into the testing environment.
+
+7. node_modules does not need to be transferred. Reinstall exact package-lock
+   dependencies from PowerShell:
+
+   cd "C:\VMS\Voting System FINAL"
+   npm ci --omit=dev
+
+8. Calculate and record transfer hashes on both computers:
+
+   Get-FileHash "C:\VMS\private-backups\Voting-System-FINAL-db-20260721.dump" -Algorithm SHA256
+   Get-FileHash "C:\VMS\Voting System FINAL\package-lock.json" -Algorithm SHA256
+
+   Source and destination hashes must match.
+
+
+PHASE 4 - CREATE FRESH APPLICATION SECRETS
+==========================================
+
+Never reuse the source computer's database password or APP_KEY.
+
+1. Generate a fresh APP_KEY in PowerShell:
+
+   $bytes = New-Object byte[] 32
+   $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+   $rng.GetBytes($bytes)
+   $rng.Dispose()
+   [Convert]::ToBase64String($bytes)
+
+2. Generate a separate long random PostgreSQL password. Use at least 24 random
+   characters and do not reuse the Windows or admin password.
+
+3. Create this file:
+
+   C:\VMS\private-config\voting-system.env
+
+4. Enter the following values, replacing placeholders:
+
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=voting_system
+   DB_USER=voting_app
+   DB_PASSWORD=REPLACE_WITH_FRESH_RANDOM_DATABASE_PASSWORD
+   APP_KEY=REPLACE_WITH_FRESH_BASE64_32_BYTE_KEY
+   LAN_ONLY=1
+
+5. Restrict file permissions on C:\VMS\private-config so only the dedicated
+   Windows administrator, SYSTEM, and the Apache account can read it. Do not
+   place this file inside the Apache DocumentRoot.
+
+6. Never send voting-system.env through chat, email, screenshots, or source
+   control.
+
+
+PHASE 5 - CREATE AND RESTORE POSTGRESQL DATABASE
+================================================
+
+Use SQL Shell (psql) or Administrator PowerShell. Replace passwords and paths.
+
+1. Connect as the PostgreSQL administrative account and create the application
+   role and database:
+
+   CREATE ROLE voting_app LOGIN PASSWORD 'FRESH_RANDOM_DATABASE_PASSWORD';
+   CREATE DATABASE voting_system OWNER voting_app;
+   REVOKE ALL ON DATABASE voting_system FROM PUBLIC;
+   GRANT CONNECT, TEMPORARY ON DATABASE voting_system TO voting_app;
+
+2. Restore the custom-format dump as voting_app so restored objects are owned
+   by the least-privileged application role:
+
+   $env:PGPASSWORD = 'FRESH_RANDOM_DATABASE_PASSWORD'
+   pg_restore --host localhost --port 5432 --username voting_app `
+     --dbname voting_system --no-owner --no-privileges --clean --if-exists `
+     "C:\VMS\private-backups\Voting-System-FINAL-db-20260721.dump"
+   Remove-Item Env:\PGPASSWORD
+
+3. Apply the idempotent security migration:
+
+   $env:PGPASSWORD = 'FRESH_RANDOM_DATABASE_PASSWORD'
+   psql --host localhost --port 5432 --username voting_app `
+     --dbname voting_system --set ON_ERROR_STOP=1 `
+     --file "C:\VMS\Voting System FINAL\database\security_migration.sql"
+   Remove-Item Env:\PGPASSWORD
+
+4. Do not run an old db.sql file over the restored database. Use the .dump file
+   followed by database\security_migration.sql.
+
+5. Verify the application role is not a superuser:
+
+   SELECT rolname, rolsuper, rolcreatedb, rolcreaterole
+   FROM pg_roles WHERE rolname = 'voting_app';
+
+   rolsuper, rolcreatedb, and rolcreaterole must all be false.
+
+6. Configure PostgreSQL for localhost only in postgresql.conf:
+
+   listen_addresses = 'localhost'
+
+7. In pg_hba.conf, allow local password-authenticated connections only. Do not
+   add the election LAN subnet for voting_app.
+
+8. Restart PostgreSQL and confirm port 5432 is not reachable from another LAN
+   device:
+
+   Test-NetConnection SERVER_IP -Port 5432
+
+   TcpTestSucceeded must be False from a client device.
+
+
+PHASE 6 - CONFIGURE APACHE ON PORT 8080
+=======================================
+
+1. Open C:\xampp\apache\conf\httpd.conf.
+
+2. Ensure this appears exactly once:
+
+   Listen 8080
+
+3. Ensure the virtual-host configuration is included:
+
+   Include conf/extra/httpd-vhosts.conf
+
+4. Add this block to C:\xampp\apache\conf\extra\httpd-vhosts.conf. Replace
+   ADMIN_COMPUTER_IP with the dedicated admin computer's fixed IP:
+
+   <VirtualHost *:8080>
+       DocumentRoot "C:/VMS/Voting System FINAL"
+
+       <Directory "C:/VMS/Voting System FINAL">
+           Options -Indexes
+           AllowOverride All
+           Require all granted
+       </Directory>
+
+       <Location "/admin">
+           <RequireAny>
+               Require ip 127.0.0.1
+               Require ip ::1
+               Require ip ADMIN_COMPUTER_IP
+           </RequireAny>
+       </Location>
+
+       ErrorLog "logs/vms-error.log"
+       CustomLog "logs/vms-access.log" combined
+   </VirtualHost>
+
+5. Do not add another Listen 8080 inside httpd-vhosts.conf.
+
+6. Edit the project .htaccess. Replace broad private ranges with the actual
+   isolated election subnet. Example only:
+
+   <RequireAny>
+       Require ip 127.0.0.1
+       Require ip ::1
+       Require ip 192.168.10.0/24
+   </RequireAny>
+
+7. Do not use 192.168.10.0/24 unless it matches the actual router. Determine
+   the server IP and subnet with:
+
+   ipconfig
+
+8. Validate Apache before starting it:
+
+   C:\xampp\apache\bin\httpd.exe -t -d C:/xampp/apache
+
+   Required result:
+
+   Syntax OK
+
+9. Start Apache from XAMPP Control Panel as Administrator.
+
+10. Apache must listen on 8080. MySQL in XAMPP is not required because this
+    system uses PostgreSQL.
+
+
+PHASE 7 - ISOLATED ROUTER AND WINDOWS FIREWALL
+==============================================
+
+1. Use a dedicated router disconnected from the internet.
+
+2. Change the router administrator password.
+
+3. Disable:
+   - WPS
+   - UPnP
+   - Remote administration
+   - Guest network
+   - Unused port forwarding
+
+4. Use WPA2-AES or WPA3 with a strong temporary passphrase.
+
+5. Reserve fixed addresses for:
+   - Voting server
+   - Admin computer
+   - Monitoring computer
+
+6. Set the Windows network profile to Private only for this trusted isolated
+   router.
+
+7. Press Win+R and run:
+
+   wf.msc
+
+8. Disable broad Apache HTTP Server rules for:
+
+   C:\xampp\apache\bin\httpd.exe
+
+   Do not disable rules belonging to EDB/PEM or unrelated Apache programs.
+
+9. Create one inbound firewall rule:
+
+   Program: C:\xampp\apache\bin\httpd.exe
+   Protocol: TCP
+   Local port: 8080
+   Remote address: ACTUAL_ELECTION_SUBNET_ONLY
+   Profile: Private
+   Action: Allow
+   Name: VMS Apache 8080 - Election LAN Only
+
+10. Do not create an inbound UDP rule.
+
+11. Do not expose PostgreSQL port 5432 to the LAN.
+
+12. If HTTPS is not configured, do not allow Apache port 443 through Windows
+    Firewall.
+
+
+PHASE 8 - APPLICATION INITIALIZATION
+====================================
+
+1. Open on the server:
+
+   http://localhost:8080/
+
+2. Open from an authorized LAN client:
+
+   http://SERVER_IP:8080/
+
+3. Sign in using a temporary test administrator account.
+
+4. Immediately set a unique administrator password of at least 14 characters.
+
+5. Enable administrator TOTP/2FA and store recovery information offline.
+
+6. Confirm no default, debug, resetter, or unused administrator account works.
+
+7. Use only fake elections, fake candidates, and fake voters.
+
+8. Before setting an election to ongoing:
+   - Upload and verify the logo, background, and favicon
+   - Upload and verify the DOCX credential template
+   - Generate a test credential DOCX
+   - Export a test voter list
+
+9. Settings images accept only genuine JPEG, PNG, or WEBP files up to 2 MB and
+   are decoded and safely re-encoded. Candidate photos accept genuine JPG, PNG,
+   GIF, or WEBP files up to 15 MB. Candidate uploads are MIME/type checked,
+   decoded, resized to at most 2000px, and re-encoded; source images remain
+   bounded to 8000px per side and 40 megapixels. PHP GD must remain enabled.
+
+10. DOCX template uploads require an admin password and reject macros, active
+    content, embedded objects, external links, DDE fields, unsafe XML, and ZIP
+    bombs.
+
+11. Interface image changes and template uploads are locked while any election
+    is ongoing.
+
+
+PHASE 9 - REQUIRED SECURITY VERIFICATION
+========================================
+
+Run these checks before the hacking test:
+
+[ ] Apache configuration returns Syntax OK
+[ ] Main page returns HTTP 200
+[ ] Unauthenticated /admin page redirects to root login
+[ ] /templates/credentials_template.docx returns HTTP 403
+[ ] /assets/images/test.php returns HTTP 403
+[ ] Directory browsing returns HTTP 403
+[ ] .env, SQL, backup, log, and config files cannot be downloaded
+[ ] PHP display_errors is Off
+[ ] PHP GD is enabled
+[ ] PostgreSQL works locally but port 5432 is blocked from clients
+[ ] Only TCP 8080 is allowed from the exact election subnet
+[ ] /admin is reachable only from server and dedicated admin computer
+[ ] Strong fresh admin password is active
+[ ] TOTP/2FA is active
+[ ] No real personal data exists in the test database
+[ ] Offline database backup exists and is disconnected
+[ ] Windows Defender is enabled
+[ ] Server date, time, and timezone are correct
+
+Useful local commands:
+
+   curl.exe -I http://127.0.0.1:8080/
+   curl.exe -I http://127.0.0.1:8080/templates/credentials_template.docx
+   curl.exe -I http://127.0.0.1:8080/assets/images/test.php
+   netstat -ano | findstr LISTENING
+   C:\xampp\apache\bin\httpd.exe -t -d C:/xampp/apache
+
+
+PHASE 10 - BACKUP BEFORE ATTACK TESTING
+=======================================
+
+1. Stop user activity before creating the final backup.
+
+2. Create a PostgreSQL custom-format backup:
+
+   $env:PGPASSWORD = 'FRESH_RANDOM_DATABASE_PASSWORD'
+   pg_dump --host localhost --port 5432 --username voting_app `
+     --format custom --no-owner --no-privileges `
+     --file "C:\VMS\private-backups\pre-attack-test.dump" voting_system
+   Remove-Item Env:\PGPASSWORD
+
+3. Hash the backup:
+
+   Get-FileHash "C:\VMS\private-backups\pre-attack-test.dump" -Algorithm SHA256
+
+4. Copy the backup to clean removable storage, then physically disconnect it.
+
+5. Create a clean Windows system image or VM snapshot when possible.
+
+
+PHASE 11 - MONITORING DURING THE TEST
+=====================================
+
+Monitor these files and systems:
+
+- C:\xampp\apache\logs\vms-access.log
+- C:\xampp\apache\logs\vms-error.log
+- C:\xampp\apache\logs\error.log
+- PostgreSQL logs
+- Windows Security and System Event Logs
+- Microsoft Defender Protection History
+- Application audit_logs table
+
+Wazuh may be used on a separate monitoring computer. Do not run the Wazuh
+manager on the attacker VM. Begin with alert-only monitoring; avoid automatic
+blocking until rules have been tested for false positives.
+
+Record for every test:
+
+- Tester name
+- Written authorization
+- Source IP
+- Start and end time
+- Tool or method
+- Target endpoint
+- Result
+- Relevant log IDs
+
+Stop testing immediately if real data appears, an unknown device joins, logs
+stop unexpectedly, the server becomes unstable, or unauthorized outbound
+internet traffic is detected.
+
+
+PHASE 12 - ATTACKER COMPUTER SAFETY
+===================================
+
+1. Use another dedicated computer, not a personal laptop.
+
+2. Run attack tools inside a disposable virtual machine.
+
+3. Take a clean VM snapshot before installing tools.
+
+4. Disable VM shared folders, shared clipboard, drag-and-drop, USB passthrough,
+   saved credentials, and host filesystem access.
+
+5. Do not install unknown scripts, payloads, cracked tools, or executables on
+   the Windows host.
+
+6. Keep the attacker computer off personal and business networks.
+
+7. Delete or revert the attacker VM after testing.
+
+
+PHASE 13 - INCIDENT RESPONSE
+============================
+
+If compromise is suspected:
+
+1. Disconnect Ethernet and Wi-Fi immediately.
+2. Do not shut down immediately if live memory evidence is required by the
+   authorized security tester; otherwise isolate first and follow the agreed
+   incident procedure.
+3. Preserve Apache, PostgreSQL, Windows, Defender, Wazuh, and application logs.
+4. Photograph or record visible error messages and exact times.
+5. Change all passwords and APP_KEY from a separate clean computer.
+6. Do not trust manual malware cleanup for a high-risk compromise.
+7. Reimage the affected computer and restore only verified clean data.
+
+
+PHASE 14 - AFTER TESTING
+========================
+
+1. Disconnect all test devices from the election LAN.
+2. Export logs and findings to clean removable storage.
+3. Hash the exported evidence.
+4. Restore the database from the clean pre-test backup if data changed.
+5. Rotate admin, PostgreSQL, router, Wi-Fi, TOTP, and APP_KEY secrets.
+6. Delete/revert the attacker VM.
+7. Run Microsoft Defender Offline Scan and Full Scan.
+8. Review installed applications, startup entries, services, scheduled tasks,
+   browser extensions, Windows accounts, and firewall rules.
+9. Reimage the dedicated server and attacker computer before repurposing them.
+10. Never move executables or scripts from the attacker environment to a
+    personal computer.
+
+
+COMMON TROUBLESHOOTING
+======================
+
+Apache: "shutdown unexpectedly"
+--------------------------------
+- Run httpd.exe -t and fix the exact syntax error.
+- Ensure Listen 8080 appears only once.
+- Check whether another program owns port 8080.
+- Do not terminate unrelated httpd.exe processes such as Incredibuild/IBX.
+
+Settings image upload says secure processing is unavailable
+------------------------------------------------------------
+- Enable extension=gd in C:\xampp\php\php.ini.
+- Restart Apache.
+- Confirm gd appears in C:\xampp\php\php.exe -m.
+
+Database connection failed
+--------------------------
+- Confirm PostgreSQL service is running.
+- Confirm voting-system.env is outside the project at C:\VMS\private-config.
+- Confirm DB_HOST=localhost and the fresh role/database credentials match.
+- Do not display database errors to browser users.
+
+HTTP 403 from every client
+--------------------------
+- Confirm the project .htaccess subnet matches the actual election router.
+- Confirm the Windows Firewall rule uses the correct subnet and Private profile.
+- Confirm the server IP did not change.
+
+Admin works on the server but not the admin computer
+----------------------------------------------------
+- Confirm the admin computer has the fixed IP used in the Apache <Location
+  "/admin"> rule.
+- Restart Apache after editing the virtual host.
+
+
+FINAL GO/NO-GO CHECKLIST
+========================
+
+Do not begin attack testing unless every item below is complete:
+
+[ ] Dedicated clean server computer
+[ ] Dedicated attacker computer and disposable VM
+[ ] Written authorization and agreed scope
+[ ] Isolated router with no internet
+[ ] Fake data only
+[ ] Fresh secrets and no default accounts
+[ ] PostgreSQL localhost-only
+[ ] Exact-subnet TCP 8080 firewall rule
+[ ] Admin IP restriction
+[ ] Apache Syntax OK
+[ ] PHP GD enabled
+[ ] Application and upload tests passed
+[ ] TOTP/2FA enabled
+[ ] Offline verified backup disconnected
+[ ] Logs and monitoring active
+[ ] Incident isolation and reimage plan ready
+
+If any required item is missing, postpone the hacking test until it is fixed.
